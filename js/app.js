@@ -223,3 +223,4 @@ this.reset = function() {
    return array;
   }
  };
+// Referenced live webinar walkthrough with Mike Wales, Memory Game Webinar with Ryan Waite,  https://developer.mozilla.org, and https://www.w3schools.com for functions and process.
