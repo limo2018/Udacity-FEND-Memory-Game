@@ -2,10 +2,18 @@
  * Create a list that holds all of your cards
  */
 
- const cards =  ['fa-diamond','fa-diamond','fa-paper-plane-o','fa-paper-plane-o','fa-anchor','fa-anchor','fa-bolt','fa-bolt','fa-cube','fa-cube','fa-bomb','fa-bomb','fa-bicycle','fa-bicycle','fa-leaf','fa-leaf'];
+ const cards =  ['fa-diamond','fa-diamond',
+ 'fa-paper-plane-o','fa-paper-plane-o',
+ 'fa-anchor','fa-anchor',
+ 'fa-bolt','fa-bolt',
+ 'fa-cube','fa-cube',
+ 'fa-bomb','fa-bomb',
+ 'fa-bicycle','fa-bicycle',
+ 'fa-leaf','fa-leaf'
+];
 
- let cardGame = new CardGame(cards, 15);
- cardGame.start();
+let cardGame = new CardGame(cards);
+cardGame.start();
 
 /*
  * Display the cards on the page
@@ -14,20 +22,23 @@
  *   - add each card's HTML to the page
  */
 
-  function CardGame(cards, maxMoves){
+ function CardGame(cards){
    this.cards = cards;
-   this.maxMoves = maxMoves;
-   this.starFactor = 5;
    this.displayCards = [];
    this.matchedCards = [];
    this.moves = 0;
    this.initalized = false;
    this.lastSelectedCard = null;
-
-   this.startTime = null;
-
+   this.timer = 0;
+   this.timerObj = null;
    this.gameContainer = document.querySelector(".deck");
    this.startsContainer = document.querySelector(".stars");
+
+this.getStars = function() {
+ if (this.moves >= 0 && this.moves < 10) return 3;
+ if (this.moves >= 10 && this.moves < 15) return 2;
+ if (this.moves >= 15) return 1;
+}
 
 this.updateStars = function() {
      let game = this;
@@ -35,8 +46,8 @@ this.updateStars = function() {
           .forEach(function(li){
                game.startsContainer.removeChild(li);
           });
-     let rate = Math.round(this.moves/this.starFactor);
-     for(i = 0; i < rate; i++) {
+     let stars = this.getStars();
+     for(i = 0; i < stars; i++) {
        let li = document.createElement('li');
        let ie = document.createElement('i');
        ie.classList.add('fa', 'fa-star');
@@ -73,21 +84,14 @@ this.updateStars = function() {
        }
    }
 
-   this.confirmRestartGame = function(msg) {
-     if (confirm(msg +' Click \'OK\' to start a new game; click \'Cancel\' to restart the current game.')) {
-   this.start();
-} else {
-   this.reset();
-}
-   }
-
    this.completeGame = function(){
-                 var diff = (new Date() - this.startTime) / 1000;
-                 diff = Math.round(diff);
+                let time = this.getTime();
+                 this.clearTimer();
+                 var stars = this.getStars();
                  if (confirm("Congratulations, you won the game!"
-                   + "\nTime : " + diff + " seconds"
-                   + "\nUnmatched Moves : " + (this.maxMoves-this.moves)
-                   + "\nStars : " +  Math.round(this.moves/this.starFactor)
+                   + "\nTime : " + time
+                   + "\nMoves : " + this.moves
+                   + "\nStars : " + stars
                    + "\nDo you want to start a new one?")){
                    this.start();
                  }
@@ -113,15 +117,12 @@ this.updateStars = function() {
                }
             }
             else { // not matched
-            this.setCardMatch(card, card_name, false);                    this.setCardMatch(this.lastSelectedCard, name, false);
-               this.moves--;
-               if (this.moves >=0) {
-                 this.updateStars();
-               }
-               else {
-                 this.confirmRestartGame('You have no move left.');
-               }
+            this.setCardMatch(card, card_name, false);                    
+            this.setCardMatch(this.lastSelectedCard, name, false);
              }
+             this.moves++;
+             this.updateStars();
+
              this.lastSelectedCard = null;
         }
    }
@@ -157,10 +158,10 @@ this.resetAllCards = function() {
      });
    }
 
-// TODO: display all cards
+// Display all cards
 this.load_cards = function(){
-let game = this;    document.querySelectorAll('.card').forEach(function(card){
-
+let game = this;
+document.querySelectorAll('.card').forEach(function(card){
          let ie = card.querySelector('i');
          let name = game.getCardName(card);
           ie.classList = "";
@@ -169,10 +170,31 @@ let game = this;    document.querySelectorAll('.card').forEach(function(card){
        });
 }
 
-this.reset = function() {
-     this.startTime = new Date();
+this.setTimer = function() {
+ let span = document.getElementById('timer');
+ this.timer ++;
+ let min = Math.floor(this.timer / 60);
+ let sec = this.timer % 60;
+ span.innerHTML = min + " min "+ sec + " sec";
+}
+ this.getTime = function(){
+  let min = Math.floor(this.timer / 60);
+  let sec = this.timer % 60;
+  return min + " min "+ sec + " sec";
+}
 
-     this.moves = this.maxMoves;
+this.clearTimer = function() {
+ this.timer = 0;
+ if (this.timerObj != null) {
+     clearInterval(this.timerObj);
+ }
+ let span = document.getElementById('timer');
+ span.innerHTML = "";
+}
+
+this.reset = function() {
+     this.clearTimer();
+     this.moves = 0;
      this.updateStars();
      this.lastSelectedCard = null;
      this.matchedCards = [];
@@ -182,15 +204,17 @@ this.reset = function() {
      setTimeout(function(){
        // reset all cards elements css status
         game.resetAllCards();
-     }, 5000);
+        game.timerObj = setInterval(function(){
+          game.setTimer()}, 1000);
+     });
    }
- 
+
    this.hookButtons = function() {
      let game = this;
      let resetBtn = document.querySelector("#restart");
      //let hintBtn = document.querySelector("#hint");
      resetBtn.addEventListener('click', function() {
-        game.reset();
+        game.start();
      });
      /*
      hintBtn.addEventListener('click', function() {
@@ -223,4 +247,5 @@ this.reset = function() {
    return array;
   }
  };
-// Referenced live webinar walkthrough with Mike Wales, Memory Game Webinar with Ryan Waite,  https://developer.mozilla.org, and https://www.w3schools.com for functions and process.
+
+//Referenced live webinar walkthrough with Mike Wales, Memory Game Webinar with Ryan Waite,  https://developer.mozilla.org and https://www.w3schools.com for functions and process.
